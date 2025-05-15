@@ -28,7 +28,13 @@ SECRET_KEY = 'django-insecure-#x_fu1$0lv+ibng-+9)a=(4x2me#yh1n68)4bii8a%%o!dinz*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['habittracker-w4ug.onrender.com']
+# settings.py (final working version)
+ALLOWED_HOSTS = [
+    'habittracker-w4ug.onrender.com',  # Your exact domain
+    '.onrender.com',                   # Allows ALL Render.com subdomains (safer)
+    'localhost',                      # For local testing
+    '127.0.0.1',                     # For local testing
+]
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
