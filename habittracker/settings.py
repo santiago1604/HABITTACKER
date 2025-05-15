@@ -15,7 +15,7 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+PORT = os.getenv("PORT", "8000")
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGIN_URL = 'login'
 LOGOUT_REDIRECT_URL = 'login'  # Nombre de la URL a la que redirigir después del logout
@@ -28,7 +28,12 @@ SECRET_KEY = 'django-insecure-#x_fu1$0lv+ibng-+9)a=(4x2me#yh1n68)4bii8a%%o!dinz*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['HABITTRACKER.onrender.com']
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
 
 # Application definition
@@ -44,8 +49,9 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'widget_tweaks',
+    'corsheaders',
 ]
-CSRF_TRUSTED_ORIGINS = ['']
+CSRF_TRUSTED_ORIGINS = ['https://HABITTRACKER.onrender.com']
 CSRF_COOKIE_SECURE = True
 
 CSRF_COOKIE_SAMESITE = 'Lax'
@@ -64,7 +70,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
 ]
 CORS_ALLOWED_ORIGINS = [
-    "", 
+    "https://HABITTRACKER.onrender.com", 
 ]
 ROOT_URLCONF = 'habittracker.urls'
 
@@ -135,10 +141,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
 
 
 # Default primary key field type
