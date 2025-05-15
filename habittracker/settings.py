@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-#x_fu1$0lv+ibng-+9)a=(4x2me#yh1n68)4bii8a%%o!dinz*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['HABITTRACKER.onrender.com']
+ALLOWED_HOSTS = ['habittracker-w4ug.onrender.com']
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'corsheaders',
 ]
-CSRF_TRUSTED_ORIGINS = ['https://HABITTRACKER.onrender.com']
+CSRF_TRUSTED_ORIGINS = ['https://habittracker-w4ug.onrender.com']
 CSRF_COOKIE_SECURE = True
 
 CSRF_COOKIE_SAMESITE = 'Lax'
@@ -70,7 +70,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
 ]
 CORS_ALLOWED_ORIGINS = [
-    "https://HABITTRACKER.onrender.com", 
+    "https://habittracker-w4ug.onrender.com", 
 ]
 ROOT_URLCONF = 'habittracker.urls'
 
