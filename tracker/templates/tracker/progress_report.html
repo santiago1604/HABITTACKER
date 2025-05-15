@@ -1,0 +1,239 @@
+{% extends 'tracker/base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block title %}Informe de progreso - HabitTracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-chart-line me-2"></i>Informe de progreso
+        </h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>Seleccionar rango de fechas
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        {{ form.start_date|as_crispy_field }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.end_date|as_crispy_field }}
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter me-1"></i> Filtrar
+                        </button>
+                    </div>
+                </form>
+                {% if start_date and end_date %}
+                <p class="mt-3 text-muted">
+                    Mostrando resultados desde <strong>{{ start_date|date:"d/m/Y" }}</strong> hasta <strong>{{ end_date|date:"d/m/Y" }}</strong>
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tasks me-2"></i>Resumen de tareas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="progress-circle mx-auto position-relative" style="width: 150px; height: 150px;">
+                        <div class="position-absolute top-50 start-50 translate-middle">
+                            <span class="progress-percentage fs-4">{{ task_completion_rate|default:"0" }}%</span>
+                        </div>
+                        <svg width="150" height="150" viewBox="0 0 36 36" class="circular-chart">
+                            <path class="circle-bg"
+                                d="M18 2.0845
+                                a 15.9155 15.9155 0 0 1 0 31.831
+                                a 15.9155 15.9155 0 0 1 0 -31.831"
+                                fill="none"
+                                stroke="#eee"
+                                stroke-width="3"/>
+                            <path class="circle"
+                                d="M18 2.0845
+                                a 15.9155 15.9155 0 0 1 0 31.831
+                                a 15.9155 15.9155 0 0 1 0 -31.831"
+                                fill="none"
+                                stroke="#28a745"
+                                stroke-width="3"
+                                stroke-dasharray="{% if task_completion_rate %}{{ task_completion_rate|stringformat:'d' }}{% else %}0{% endif %}, 100"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <p>Has completado <strong>{{ completed_tasks|default:"0" }}</strong> de <strong>{{ total_tasks|default:"0" }}</strong> tareas en el período seleccionado.</p>
+                    <p class="mb-0">Tasa de completado: <strong>{{ task_completion_rate|default:"0" }}%</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-check me-2"></i>Resumen de hábitos
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if habit_data %}
+                <div class="list-group">
+                    {% for data in habit_data %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-1">{{ data.habit.name }}</h6>
+                            <span class="badge bg-{{ data.habit.priority }} text-white">
+                                {{ data.habit.get_priority_display }}
+                            </span>
+                        </div>
+                        <div class="progress mt-2">
+                            {% with last_progress=data.cumulative_progress|last %}
+                                {% if last_progress %}
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {{ last_progress.percentage|default:'0' }}%" 
+                                     aria-valuenow="{{ last_progress.percentage|default:'0' }}" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ last_progress.percentage|default:"0" }}%
+                                </div>
+                                {% else %}
+                                <div class="progress-bar bg-secondary" role="progressbar" 
+                                     style="width: 0%" 
+                                     aria-valuenow="0" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    0%
+                                </div>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-center text-muted">No hay datos de hábitos para el período seleccionado.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-area me-2"></i>Progreso acumulado por hábito
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if habit_data %}
+                <canvas id="habitProgressChart" height="300"></canvas>
+                {% else %}
+                <p class="text-center text-muted">No hay datos de hábitos para visualizar.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if habit_data %}
+    try {
+        // Configurar colores según prioridad
+        function getColorForPriority(priority) {
+            const colors = {
+                'alta': 'rgb(220, 53, 69)',
+                'media': 'rgb(255, 193, 7)',
+                'baja': 'rgb(13, 202, 240)'
+            };
+            return colors[priority.toLowerCase()] || 'rgb(108, 117, 125)';
+        }
+
+        // Preparar datasets
+        const datasets = [
+            {% for data in habit_data %}
+            {
+                label: '{{ data.habit.name|escapejs }}',
+                data: {{ data.chart_data|safe }},
+                borderColor: getColorForPriority('{{ data.habit.priority }}'),
+                backgroundColor: 'transparent',
+                tension: 0.4,
+                borderWidth: 2,
+                fill: false
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        // Formatear fechas para el eje X
+        const labels = {{ chart_labels|safe }}.map(date => {
+            const dateObj = new Date(date + 'T00:00:00');
+            return dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+        });
+
+        // Crear el gráfico
+        const ctx = document.getElementById('habitProgressChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Porcentaje completado (%)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Fecha'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error al cargar el gráfico:', error);
+    }
+    {% endif %}
+});
+</script>
+{% endblock %}

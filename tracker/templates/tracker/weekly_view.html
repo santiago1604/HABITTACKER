@@ -1,0 +1,160 @@
+{% extends 'tracker/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Vista Semanal - HabitTracker{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <form style="display:none;">
+        {% csrf_token %}
+    </form>
+    
+    <!-- Tabla de Tareas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tasks me-2"></i>Agenda Semanal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    {% for day in week_days %}
+                                    <th class="text-center {% if day.date_obj == today %}bg-light{% endif %}">
+                                        {{ day.date_obj|date:"l"|title }}<br>
+                                        <small>{{ day.date_obj|date:"d/m" }}</small>
+                                    </th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th>Tareas</th>
+                                    {% for day in week_days %}
+                                    <td>
+                                        {% for task in tasks_by_day|get_item:day.date_obj %}
+                                        <div class="task-item mb-2 p-2 border rounded bg-white">
+                                            <span class="badge bg-{{ task.priority }} me-2">{{ task.get_priority_display }}</span>
+                                            <strong>{{ task.title }}</strong>
+                                            {% if task.description %}
+                                            <p class="small mb-0 text-muted">{{ task.description|truncatechars:30 }}</p>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Hábitos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-check me-2"></i>Seguimiento de Hábitos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Hábito</th>
+                                    {% for day in week_days %}
+                                    <th class="text-center {% if day.date_obj == today %}bg-light{% endif %}">
+                                        {{ day.date_obj|date:"D"|title }}<br>
+                                        <small>{{ day.date_obj|date:"d/m" }}</small>
+                                    </th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for habit in habits %}
+                                <tr>
+                                    <td>
+                                        <span class="badge rounded-pill bg-{{ habit.priority }}-subtle text-{{ habit.priority }}">
+                                            {{ habit.get_priority_display }}
+                                        </span>
+                                        {{ habit.name }}
+                                    </td>
+                                    {% for day in week_days %}
+                                    <td class="text-center {% if day.date_obj == today %}bg-light{% endif %}">
+                                        <div class="form-check d-flex justify-content-center">
+                                            <input 
+                                                class="form-check-input habit-checkbox" 
+                                                type="checkbox" 
+                                                data-record-id="{{ habit_records|get_item:habit.id|get_item:day.date_str|get_item:'id' }}"
+                                                {% if habit_records|get_item:habit.id|get_item:day.date_str|get_item:'completed' %}checked{% endif %}
+                                            >
+                                        </div>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Manejar los checkboxes de hábitos
+    const habitCheckboxes = document.querySelectorAll('.habit-checkbox');
+    
+    habitCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const recordId = this.dataset.recordId;
+            const isChecked = this.checked;
+            
+fetch('/habit-record/' + recordId + '/toggle/', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value,
+                },
+                body: JSON.stringify({completed: isChecked})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status !== 'success') {
+                    this.checked = !isChecked; // Revertir si hay error
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                this.checked = !isChecked; // Revertir si hay error
+            });
+        });
+    });
+});
+</script>
+
+<style>
+    .badge.bg-alta { background-color: #dc3545; } /* Rojo */
+    .badge.bg-media { background-color: #ffc107; color: #000; } /* Amarillo */
+    .badge.bg-baja { background-color: #17a2b8; } /* Azul claro */
+    
+    .task-item {
+        transition: all 0.2s ease;
+    }
+    .task-item:hover {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,10 @@
+Django==5.1.7
+gunicorn==20.1.0
+django-crispy-forms==1.14.0
+crispy-bootstrap5==0.7
+django-widget-tweaks==1.4.12
+psycopg2-binary>=2.9.3
+whitenoise>=6.0
+django-cors-headers
+# Para gestión de variables de entorno
+python-dotenv>=1.0.0

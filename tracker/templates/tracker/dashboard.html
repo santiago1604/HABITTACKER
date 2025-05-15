@@ -1,0 +1,193 @@
+{% extends 'tracker/base.html' %}
+{% load get_dict_item %}
+
+{% block title %}Dashboard - HabitTracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Bienvenido, {{ user.username }}</h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <!-- Contenido de tareas pendientes (sin cambios) -->
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card h-100">
+            <!-- Contenido de progreso de tareas (sin cambios) -->
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-check me-2"></i>Seguimiento semanal de hábitos
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Hábito</th>
+                                {% for day in week_days %}
+                                    <th class="text-center {% if day == today %}bg-light{% endif %}">
+                                        {{ day|date:"D" }}<br>
+                                        <small>{{ day|date:"d/m" }}</small>
+                                    </th>
+                                {% endfor %}
+                                <th class="text-center">Progreso</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for habit_data in habits_with_data %}
+                                <tr>
+                                    <td>
+                                        <span class="badge rounded-pill bg-{{ habit_data.habit.priority }}-subtle text-{{ habit_data.habit.priority }}">
+                                            {{ habit_data.habit.get_priority_display }}
+                                        </span>
+                                        {{ habit_data.habit.name }}
+                                    </td>
+                                    {% for day in week_days %}
+                                        <td class="text-center {% if day == today %}bg-light{% endif %}">
+                                            <div class="form-check d-flex justify-content-center">
+                                                <input 
+                                                    class="form-check-input habit-checkbox"
+                                                    type="checkbox"
+                                                    data-record-id="{{ habit_data.records|get_item:day.id }}"
+                                                    {% if habit_data.records|get_item:day.id %}checked{% endif %}
+                                                >
+                                            </div>
+                                        </td>
+                                    {% endfor %}
+                                    <td class="text-center">
+                                        <div class="progress">
+                                            <div 
+                                                class="progress-bar bg-success habit-progress-bar" 
+                                                style="--percentage: {{ habit_data.completion_rate }}"
+                                                role="progressbar" 
+                                                aria-valuenow="{{ habit_data.completion_rate }}" 
+                                                aria-valuemin="0" 
+                                                aria-valuemax="100"
+                                            >
+                                                {{ habit_data.completion_rate }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="{{ week_days|length|add:2 }}" class="text-center">
+                                        <p>No tienes hábitos configurados.</p>
+<a href="{% url 'habit_list' %}" class="btn btn-primary">
+    <i class="fas fa-plus me-1"></i> Crear hábito
+</a>
+<a href="{% url 'new_task' %}" class="btn btn-secondary ms-2">
+    <i class="fas fa-plus me-1"></i> Crear tarea
+</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Estilos para el círculo de progreso */
+.progress-circle {
+    width: 120px;
+    height: 120px;
+    position: relative;
+    border-radius: 50%;
+    background: #f3f3f3;
+    margin: 0 auto;
+}
+
+.progress-circle-inner {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    border-radius: 50%;
+    clip: rect(0, 60px, 120px, 0);
+    background: #28a745;
+}
+
+.progress-circle.over50 .progress-circle-inner {
+    clip: rect(auto, auto, auto, auto);
+}
+
+.progress-percentage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Estilos para las barras de progreso de hábitos */
+.habit-progress-bar {
+    width: calc(var(--percentage) * 1%);
+    transition: width 0.3s ease;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Inicializar círculos de progreso
+    $('.progress-circle').each(function() {
+        const percentage = parseInt($(this).find('.progress-percentage').text());
+        const deg = 3.6 * percentage;
+        $(this).find('.progress-circle-inner').css('transform', 'rotate(' + deg + 'deg)');
+        
+        if (percentage > 50) {
+            $(this).addClass('over50');
+        }
+    });
+
+    // Inicializar barras de progreso
+    $('.habit-progress-bar').each(function() {
+        $(this).css('width', $(this).attr('style').match(/--percentage:\s*(\d+)/)[1] + '%');
+    });
+
+    // Manejar checkboxes de hábitos
+    $('.habit-checkbox').change(function() {
+        const recordId = $(this).data('record-id');
+        const isChecked = $(this).is(':checked');
+        
+        $.ajax({
+            url: '/habit-record/' + recordId + '/toggle/',
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'completed': isChecked
+            },
+            success: function() {
+                location.reload();
+            },
+            error: function() {
+                alert('Error al actualizar el registro');
+                $(this).prop('checked', !isChecked);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
