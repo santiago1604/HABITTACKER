@@ -55,7 +55,6 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'widget_tweaks',
-    'corsheaders',
 ]
 CSRF_TRUSTED_ORIGINS = ['https://habittracker-w4ug.onrender.com']
 CSRF_COOKIE_SECURE = True
@@ -73,7 +72,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "corsheaders.middleware.CorsMiddleware",
 ]
 CORS_ALLOWED_ORIGINS = [
     "https://habittracker-w4ug.onrender.com", 
