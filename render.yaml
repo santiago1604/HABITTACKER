@@ -1,0 +1,33 @@
+databases:
+  - name: habittracker-db
+    plan: free
+    databaseName: habittracker
+    user: habittracker
+
+services:
+  - type: web
+    name: habittracker
+    runtime: python
+    plan: free
+    buildCommand: bash build.sh
+    startCommand: gunicorn habittracker.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: habittracker-db
+          property: connectionString
+      - key: WEB_CONCURRENCY
+        value: 2
+      # Opcional: crea un administrador en el build. Rellena los valores en el panel de Render.
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false

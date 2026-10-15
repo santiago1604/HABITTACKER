@@ -1,193 +1,205 @@
 {% extends 'tracker/base.html' %}
-{% load get_dict_item %}
 
 {% block title %}Dashboard - HabitTracker{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">Bienvenido, {{ user.username }}</h1>
+{% csrf_token %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h1 class="mb-0">Hola, {{ user.username }}</h1>
+        <p class="text-body-secondary mb-0">{{ today|date:"l, j \d\e F \d\e Y"|capfirst }}</p>
+    </div>
+    <div>
+        <a href="{% url 'new_habit' %}" class="btn btn-outline-primary"><i class="fas fa-plus me-1"></i> Hábito</a>
+        <a href="{% url 'new_task' %}" class="btn btn-primary ms-1"><i class="fas fa-plus me-1"></i> Tarea</a>
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card h-100">
-            <!-- Contenido de tareas pendientes (sin cambios) -->
+<!-- Estadísticas rápidas -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card h-100">
+            <div class="card-body d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-body-secondary small">Hábitos hoy</div>
+                    <div class="stat-value"><span id="habits-done-today">{{ habits_done_today }}</span>/{{ habits_total }}</div>
+                </div>
+                <i class="fas fa-calendar-check stat-icon text-success"></i>
+            </div>
         </div>
     </div>
-    
-    <div class="col-md-6">
-        <div class="card h-100">
-            <!-- Contenido de progreso de tareas (sin cambios) -->
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card h-100">
+            <div class="card-body d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-body-secondary small">Tareas pendientes</div>
+                    <div class="stat-value">{{ pending_count }}</div>
+                    {% if overdue_count %}<span class="badge text-bg-danger">{{ overdue_count }} vencida{{ overdue_count|pluralize }}</span>{% endif %}
+                    {% if due_today_count %}<span class="badge text-bg-warning">{{ due_today_count }} para hoy</span>{% endif %}
+                </div>
+                <i class="fas fa-tasks stat-icon text-primary"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-body-secondary small">Tareas completadas</div>
+                        <div class="stat-value">{{ task_completion_rate }}%</div>
+                    </div>
+                    <i class="fas fa-check-circle stat-icon text-info"></i>
+                </div>
+                <div class="progress mt-2" style="height: 6px;" role="progressbar" aria-valuenow="{{ task_completion_rate }}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar bg-info" style="width: {{ task_completion_rate }}%"></div>
+                </div>
+                <small class="text-body-secondary">{{ completed_count }} de {{ total_tasks }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card h-100">
+            <div class="card-body d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-body-secondary small">Mejor racha activa</div>
+                    <div class="stat-value">{{ best_current_streak }} <small class="fs-6 fw-normal">día{{ best_current_streak|pluralize }}</small></div>
+                </div>
+                <i class="fas fa-fire stat-icon text-danger"></i>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-calendar-check me-2"></i>Seguimiento semanal de hábitos
-                </h5>
+<div class="row g-4 mb-4">
+    <!-- Seguimiento semanal de hábitos -->
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0"><i class="fas fa-calendar-check me-2"></i>Hábitos de esta semana</h5>
+                <a href="{% url 'weekly_view' %}" class="btn btn-sm btn-light">Ver semana</a>
             </div>
             <div class="card-body">
+                {% if habits_with_data %}
                 <div class="table-responsive">
-                    <table class="table table-bordered">
+                    <table class="table table-borderless habit-table mb-0">
                         <thead>
                             <tr>
                                 <th>Hábito</th>
                                 {% for day in week_days %}
-                                    <th class="text-center {% if day == today %}bg-light{% endif %}">
-                                        {{ day|date:"D" }}<br>
-                                        <small>{{ day|date:"d/m" }}</small>
-                                    </th>
+                                <th class="text-center {% if day == today %}today-col rounded-top{% endif %}">
+                                    {{ day|date:"D"|capfirst }}<br><small class="text-body-secondary">{{ day|date:"d/m" }}</small>
+                                </th>
                                 {% endfor %}
-                                <th class="text-center">Progreso</th>
+                                <th class="text-center">Semana</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for habit_data in habits_with_data %}
-                                <tr>
-                                    <td>
-                                        <span class="badge rounded-pill bg-{{ habit_data.habit.priority }}-subtle text-{{ habit_data.habit.priority }}">
-                                            {{ habit_data.habit.get_priority_display }}
-                                        </span>
-                                        {{ habit_data.habit.name }}
-                                    </td>
-                                    {% for day in week_days %}
-                                        <td class="text-center {% if day == today %}bg-light{% endif %}">
-                                            <div class="form-check d-flex justify-content-center">
-                                                <input 
-                                                    class="form-check-input habit-checkbox"
-                                                    type="checkbox"
-                                                    data-record-id="{{ habit_data.records|get_item:day.id }}"
-                                                    {% if habit_data.records|get_item:day.id %}checked{% endif %}
-                                                >
-                                            </div>
-                                        </td>
-                                    {% endfor %}
-                                    <td class="text-center">
-                                        <div class="progress">
-                                            <div 
-                                                class="progress-bar bg-success habit-progress-bar" 
-                                                style="--percentage: {{ habit_data.completion_rate }}"
-                                                role="progressbar" 
-                                                aria-valuenow="{{ habit_data.completion_rate }}" 
-                                                aria-valuemin="0" 
-                                                aria-valuemax="100"
-                                            >
-                                                {{ habit_data.completion_rate }}%
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="{{ week_days|length|add:2 }}" class="text-center">
-                                        <p>No tienes hábitos configurados.</p>
-<a href="{% url 'habit_list' %}" class="btn btn-primary">
-    <i class="fas fa-plus me-1"></i> Crear hábito
-</a>
-<a href="{% url 'new_task' %}" class="btn btn-secondary ms-2">
-    <i class="fas fa-plus me-1"></i> Crear tarea
-</a>
-                                    </td>
-                                </tr>
+                            {% for item in habits_with_data %}
+                            <tr class="habit-row">
+                                <td>
+                                    <a href="{% url 'habit_detail' item.habit.id %}" class="text-decoration-none fw-semibold">{{ item.habit.name }}</a><br>
+                                    <span class="badge rounded-pill text-bg-{{ item.habit.get_priority_color }}">{{ item.habit.get_priority_display }}</span>
+                                    <span class="badge rounded-pill text-bg-light border streak-badge" title="Racha actual (mejor: {{ item.best_streak }})">
+                                        <i class="fas fa-fire text-danger"></i> <span data-streak-for="{{ item.habit.id }}">{{ item.current_streak }}</span>
+                                    </span>
+                                </td>
+                                {% for d in item.days %}
+                                <td class="text-center {% if d.date == today %}today-col{% endif %}">
+                                    {% include 'tracker/_habit_checkbox.html' with habit=item.habit day=d.date completed=d.completed future=d.future %}
+                                </td>
+                                {% endfor %}
+                                <td class="text-center" style="min-width: 90px;">
+                                    <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ item.completion_rate }}">
+                                        <div class="progress-bar bg-success week-rate" style="width: {{ item.completion_rate }}%">{{ item.completion_rate }}%</div>
+                                    </div>
+                                </td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="text-body-secondary">Aún no tienes hábitos configurados.</p>
+                    <a href="{% url 'new_habit' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Crear mi primer hábito</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tareas pendientes -->
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0"><i class="fas fa-list-check me-2"></i>Próximas tareas</h5>
+                <a href="{% url 'task_list' %}" class="btn btn-sm btn-light">Ver todas</a>
+            </div>
+            <div class="card-body">
+                {% if tasks %}
+                <ul class="list-group list-group-flush">
+                    {% for task in tasks %}
+                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center {% if task.is_overdue %}task-overdue ps-2{% elif task.is_due_today %}task-today ps-2{% endif %}">
+                        <div class="me-2">
+                            <span class="badge rounded-pill text-bg-{{ task.get_priority_color }} me-1">{{ task.get_priority_display }}</span>
+                            <span class="fw-semibold">{{ task.title }}</span>
+                            {% if task.due_date %}
+                            <div class="small {% if task.is_overdue %}text-danger{% else %}text-body-secondary{% endif %}">
+                                <i class="far fa-calendar-alt"></i> {{ task.due_date|date:"d/m/Y" }}
+                                {% if task.is_overdue %}(vencida){% elif task.is_due_today %}(hoy){% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <form method="post" action="{% url 'complete_task' task.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{% url 'dashboard' %}">
+                            <button type="submit" class="btn btn-sm btn-outline-success" title="Completar" aria-label="Completar {{ task.title }}">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% if pending_count > tasks|length %}
+                <p class="small text-body-secondary mt-2 mb-0">y {{ pending_count|add:"-6" }} más…</p>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-mug-hot fa-2x text-body-secondary mb-2"></i>
+                    <p class="text-body-secondary mb-2">¡No tienes tareas pendientes!</p>
+                    <a href="{% url 'new_task' %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-plus me-1"></i> Crear tarea</a>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
-{% block extra_css %}
-<style>
-/* Estilos para el círculo de progreso */
-.progress-circle {
-    width: 120px;
-    height: 120px;
-    position: relative;
-    border-radius: 50%;
-    background: #f3f3f3;
-    margin: 0 auto;
-}
-
-.progress-circle-inner {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    border-radius: 50%;
-    clip: rect(0, 60px, 120px, 0);
-    background: #28a745;
-}
-
-.progress-circle.over50 .progress-circle-inner {
-    clip: rect(auto, auto, auto, auto);
-}
-
-.progress-percentage {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #333;
-}
-
-/* Estilos para las barras de progreso de hábitos */
-.habit-progress-bar {
-    width: calc(var(--percentage) * 1%);
-    transition: width 0.3s ease;
-}
-</style>
-{% endblock %}
-
 {% block extra_js %}
 <script>
-$(document).ready(function() {
-    // Inicializar círculos de progreso
-    $('.progress-circle').each(function() {
-        const percentage = parseInt($(this).find('.progress-percentage').text());
-        const deg = 3.6 * percentage;
-        $(this).find('.progress-circle-inner').css('transform', 'rotate(' + deg + 'deg)');
-        
-        if (percentage > 50) {
-            $(this).addClass('over50');
-        }
-    });
+document.addEventListener('habit:toggled', function (event) {
+    const checkbox = event.detail.checkbox;
+    const row = checkbox.closest('.habit-row');
 
-    // Inicializar barras de progreso
-    $('.habit-progress-bar').each(function() {
-        $(this).css('width', $(this).attr('style').match(/--percentage:\s*(\d+)/)[1] + '%');
-    });
+    // Recalcula el porcentaje semanal de la fila (solo días transcurridos)
+    if (row) {
+        const elapsed = row.querySelectorAll('.habit-checkbox:not([disabled])');
+        const done = row.querySelectorAll('.habit-checkbox:not([disabled]):checked').length;
+        const rate = elapsed.length ? Math.floor(done / elapsed.length * 100) : 0;
+        const bar = row.querySelector('.week-rate');
+        bar.style.width = rate + '%';
+        bar.textContent = rate + '%';
+        bar.parentElement.setAttribute('aria-valuenow', rate);
+    }
 
-    // Manejar checkboxes de hábitos
-    $('.habit-checkbox').change(function() {
-        const recordId = $(this).data('record-id');
-        const isChecked = $(this).is(':checked');
-        
-        $.ajax({
-            url: '/habit-record/' + recordId + '/toggle/',
-            type: 'POST',
-            data: {
-                'csrfmiddlewaretoken': '{{ csrf_token }}',
-                'completed': isChecked
-            },
-            success: function() {
-                location.reload();
-            },
-            error: function() {
-                alert('Error al actualizar el registro');
-                $(this).prop('checked', !isChecked);
-            }
-        });
-    });
+    // Actualiza el contador de hábitos de hoy
+    if (checkbox.dataset.date === '{{ today|date:"Y-m-d" }}') {
+        const counter = document.getElementById('habits-done-today');
+        const today = '{{ today|date:"Y-m-d" }}';
+        counter.textContent = document.querySelectorAll('.habit-checkbox[data-date="' + today + '"]:checked').length;
+    }
 });
 </script>
 {% endblock %}

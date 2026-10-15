@@ -1,0 +1,270 @@
+/* HabitTracker - estilos comunes */
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+.card {
+    border: 0;
+    box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+    border-bottom: 0;
+}
+
+/* Tarjetas de estadísticas */
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.stat-card .stat-icon {
+    font-size: 1.75rem;
+    opacity: 0.35;
+}
+
+/* Tablas de seguimiento */
+.habit-table th,
+.habit-table td {
+    vertical-align: middle;
+}
+
+.habit-table .today-col {
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+.habit-checkbox {
+    width: 1.35em;
+    height: 1.35em;
+    cursor: pointer;
+}
+
+.habit-checkbox:disabled {
+    cursor: not-allowed;
+}
+
+.streak-badge {
+    white-space: nowrap;
+}
+
+/* Listas ordenables */
+.drag-handle {
+    cursor: grab;
+    color: var(--bs-secondary-color);
+    padding-right: 0.5rem;
+}
+
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+/* Tareas */
+.task-item {
+    transition: box-shadow 0.2s ease;
+}
+
+.task-item:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.task-overdue {
+    border-left: 4px solid var(--bs-danger) !important;
+}
+
+.task-today {
+    border-left: 4px solid var(--bs-warning) !important;
+}
+
+.task-completed .task-title,
+.task-done {
+    text-decoration: line-through;
+    opacity: 0.65;
+}
+
+/* Agenda semanal */
+.agenda-cell {
+    min-width: 140px;
+    vertical-align: top;
+}
+
+/* Heatmap del detalle de hábito */
+.heatmap {
+    border-collapse: separate;
+    border-spacing: 4px;
+}
+
+.heatmap td {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    background-color: var(--bs-secondary-bg);
+}
+
+.heatmap td.done {
+    background-color: var(--bs-success);
+}
+
+.heatmap td.future {
+    background-color: transparent;
+    border: 1px dashed var(--bs-border-color);
+}
+
+.heatmap td.today {
+    outline: 2px solid var(--bs-primary);
+}
+
+.heatmap th {
+    font-weight: normal;
+    font-size: 0.75rem;
+    color: var(--bs-secondary-color);
+    padding-right: 0.25rem;
+}
+
+/* Gráfico */
+.chart-container {
+    position: relative;
+    height: 340px;
+}
+
+/* Círculo de progreso */
+.progress-ring {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
+}
+
+.progress-ring svg {
+    transform: rotate(-90deg);
+}
+
+.progress-ring .progress-ring-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.footer {
+    flex-shrink: 0;
+}
+
+/* Niveles del mapa de calor (vistas mensual y anual) */
+.heat-0 { background-color: var(--bs-secondary-bg); }
+.heat-1 { background-color: rgba(25, 135, 84, 0.25); }
+.heat-2 { background-color: rgba(25, 135, 84, 0.5); }
+.heat-3 { background-color: rgba(25, 135, 84, 0.75); color: #fff; }
+.heat-4 { background-color: var(--bs-success); color: #fff; }
+
+/* Calendario mensual */
+.month-table {
+    table-layout: fixed;
+    min-width: 720px;
+}
+
+.month-cell {
+    height: 110px;
+    vertical-align: top;
+    padding: 0.35rem !important;
+}
+
+.month-cell.out-of-month {
+    background-color: var(--bs-tertiary-bg);
+    opacity: 0.6;
+}
+
+.month-cell .day-number {
+    font-weight: 600;
+    text-decoration: none;
+    color: inherit;
+}
+
+.month-cell.is-today .day-number {
+    background-color: var(--bs-primary);
+    color: #fff;
+    border-radius: 50%;
+    display: inline-block;
+    width: 1.7em;
+    height: 1.7em;
+    line-height: 1.7em;
+    text-align: center;
+}
+
+.month-cell .habit-pill {
+    font-size: 0.7rem;
+    border-radius: 0.5rem;
+    padding: 0 0.35rem;
+}
+
+.month-cell .task-line {
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.priority-dot {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    margin-right: 0.25rem;
+}
+
+/* Mini calendarios de la vista anual */
+.mini-cal {
+    border-collapse: separate;
+    border-spacing: 3px;
+    margin: 0 auto;
+}
+
+.mini-cal th {
+    font-size: 0.65rem;
+    font-weight: normal;
+    color: var(--bs-secondary-color);
+    text-align: center;
+}
+
+.mini-cal td {
+    width: 1.7rem;
+    height: 1.7rem;
+    padding: 0;
+    text-align: center;
+    font-size: 0.7rem;
+    border-radius: 4px;
+}
+
+.mini-cal td a {
+    display: block;
+    line-height: 1.7rem;
+    color: inherit;
+    text-decoration: none;
+}
+
+.mini-cal td.future {
+    color: var(--bs-secondary-color);
+}
+
+.mini-cal td.today {
+    outline: 2px solid var(--bs-primary);
+}
+
+.heat-legend span {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    vertical-align: middle;
+}

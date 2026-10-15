@@ -1,239 +1,181 @@
 {% extends 'tracker/base.html' %}
-
 {% load crispy_forms_tags %}
 
 {% block title %}Informe de progreso - HabitTracker{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">
-            <i class="fas fa-chart-line me-2"></i>Informe de progreso
-        </h1>
-    </div>
-</div>
+<h1 class="mb-4"><i class="fas fa-chart-line me-2"></i>Informe de progreso</h1>
 
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-calendar-alt me-2"></i>Seleccionar rango de fechas
-                </h5>
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0"><i class="fas fa-calendar-alt me-2"></i>Rango de fechas</h5>
+    </div>
+    <div class="card-body">
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors|join:" " }}</div>
+        {% endif %}
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-4">{{ form.start_date|as_crispy_field }}</div>
+            <div class="col-md-4">{{ form.end_date|as_crispy_field }}</div>
+            <div class="col-md-4 mb-3">
+                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-1"></i> Filtrar</button>
             </div>
-            <div class="card-body">
-                <form method="GET" class="row g-3 align-items-end">
-                    <div class="col-md-4">
-                        {{ form.start_date|as_crispy_field }}
-                    </div>
-                    <div class="col-md-4">
-                        {{ form.end_date|as_crispy_field }}
-                    </div>
-                    <div class="col-md-4">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-filter me-1"></i> Filtrar
-                        </button>
-                    </div>
-                </form>
-                {% if start_date and end_date %}
-                <p class="mt-3 text-muted">
-                    Mostrando resultados desde <strong>{{ start_date|date:"d/m/Y" }}</strong> hasta <strong>{{ end_date|date:"d/m/Y" }}</strong>
-                </p>
-                {% endif %}
-            </div>
+        </form>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span class="small text-body-secondary">Rápido:</span>
+            <a class="btn btn-sm btn-outline-secondary preset" data-days="7" href="#">7 días</a>
+            <a class="btn btn-sm btn-outline-secondary preset" data-days="30" href="#">30 días</a>
+            <a class="btn btn-sm btn-outline-secondary preset" data-days="90" href="#">90 días</a>
+            <a class="btn btn-sm btn-outline-secondary preset" data-days="365" href="#">1 año</a>
         </div>
+        <p class="mt-3 mb-0 text-body-secondary">
+            Mostrando resultados desde <strong>{{ start_date|date:"d/m/Y" }}</strong> hasta <strong>{{ end_date|date:"d/m/Y" }}</strong>
+        </p>
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-6">
+<div class="row g-4 mb-4">
+    <div class="col-md-5">
         <div class="card h-100">
             <div class="card-header bg-success text-white">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-tasks me-2"></i>Resumen de tareas
-                </h5>
+                <h5 class="card-title mb-0"><i class="fas fa-tasks me-2"></i>Resumen de tareas</h5>
             </div>
-            <div class="card-body">
-                <div class="text-center mb-4">
-                    <div class="progress-circle mx-auto position-relative" style="width: 150px; height: 150px;">
-                        <div class="position-absolute top-50 start-50 translate-middle">
-                            <span class="progress-percentage fs-4">{{ task_completion_rate|default:"0" }}%</span>
-                        </div>
-                        <svg width="150" height="150" viewBox="0 0 36 36" class="circular-chart">
-                            <path class="circle-bg"
-                                d="M18 2.0845
-                                a 15.9155 15.9155 0 0 1 0 31.831
-                                a 15.9155 15.9155 0 0 1 0 -31.831"
-                                fill="none"
-                                stroke="#eee"
-                                stroke-width="3"/>
-                            <path class="circle"
-                                d="M18 2.0845
-                                a 15.9155 15.9155 0 0 1 0 31.831
-                                a 15.9155 15.9155 0 0 1 0 -31.831"
-                                fill="none"
-                                stroke="#28a745"
-                                stroke-width="3"
-                                stroke-dasharray="{% if task_completion_rate %}{{ task_completion_rate|stringformat:'d' }}{% else %}0{% endif %}, 100"/>
-                        </svg>
-                    </div>
+            <div class="card-body text-center">
+                <div class="progress-ring mb-3">
+                    <svg width="150" height="150" viewBox="0 0 36 36" aria-hidden="true">
+                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke="var(--bs-secondary-bg)" stroke-width="3"/>
+                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke="var(--bs-success)" stroke-width="3"
+                                stroke-linecap="round" stroke-dasharray="{{ task_completion_rate }}, 100"/>
+                    </svg>
+                    <div class="progress-ring-label">{{ task_completion_rate }}%</div>
                 </div>
-                <div class="text-center">
-                    <p>Has completado <strong>{{ completed_tasks|default:"0" }}</strong> de <strong>{{ total_tasks|default:"0" }}</strong> tareas en el período seleccionado.</p>
-                    <p class="mb-0">Tasa de completado: <strong>{{ task_completion_rate|default:"0" }}%</strong></p>
-                </div>
+                <p>De las <strong>{{ total_tasks }}</strong> tareas creadas en el período, has completado <strong>{{ completed_tasks }}</strong>.</p>
+                <p class="mb-0 text-body-secondary">Tareas completadas dentro del período (de cualquier fecha): <strong>{{ completed_in_period }}</strong></p>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-md-7">
         <div class="card h-100">
             <div class="card-header bg-info text-white">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-calendar-check me-2"></i>Resumen de hábitos
-                </h5>
+                <h5 class="card-title mb-0"><i class="fas fa-calendar-check me-2"></i>Resumen de hábitos</h5>
             </div>
             <div class="card-body">
                 {% if habit_data %}
-                <div class="list-group">
+                <div class="list-group list-group-flush">
                     {% for data in habit_data %}
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-1">{{ data.habit.name }}</h6>
-                            <span class="badge bg-{{ data.habit.priority }} text-white">
-                                {{ data.habit.get_priority_display }}
-                            </span>
+                    <div class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-1">
+                            <a href="{% url 'habit_detail' data.habit.id %}" class="fw-semibold text-decoration-none">{{ data.habit.name }}</a>
+                            <div>
+                                <span class="badge rounded-pill text-bg-light border" title="Racha actual / mejor racha"><i class="fas fa-fire text-danger"></i> {{ data.current_streak }} / {{ data.best_streak }}</span>
+                                <span class="badge text-bg-{{ data.habit.get_priority_color }}">{{ data.habit.get_priority_display }}</span>
+                            </div>
                         </div>
-                        <div class="progress mt-2">
-                            {% with last_progress=data.cumulative_progress|last %}
-                                {% if last_progress %}
-                                <div class="progress-bar bg-success" role="progressbar" 
-                                     style="width: {{ last_progress.percentage|default:'0' }}%" 
-                                     aria-valuenow="{{ last_progress.percentage|default:'0' }}" 
-                                     aria-valuemin="0" aria-valuemax="100">
-                                    {{ last_progress.percentage|default:"0" }}%
-                                </div>
-                                {% else %}
-                                <div class="progress-bar bg-secondary" role="progressbar" 
-                                     style="width: 0%" 
-                                     aria-valuenow="0" 
-                                     aria-valuemin="0" aria-valuemax="100">
-                                    0%
-                                </div>
-                                {% endif %}
-                            {% endwith %}
+                        <div class="progress mt-2" role="progressbar" aria-valuenow="{{ data.rate }}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar bg-success" style="width: {{ data.rate|stringformat:'.1f' }}%">{{ data.rate }}%</div>
                         </div>
+                        <small class="text-body-secondary">{{ data.completed_days }} de {{ data.total_days }} días</small>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-center text-muted">No hay datos de hábitos para el período seleccionado.</p>
+                <p class="text-center text-body-secondary mb-0">No hay hábitos activos para el período seleccionado.</p>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-chart-area me-2"></i>Progreso acumulado por hábito
-                </h5>
-            </div>
-            <div class="card-body">
-                {% if habit_data %}
-                <canvas id="habitProgressChart" height="300"></canvas>
-                {% else %}
-                <p class="text-center text-muted">No hay datos de hábitos para visualizar.</p>
-                {% endif %}
-            </div>
+<div class="card">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h5 class="card-title mb-0"><i class="fas fa-chart-area me-2"></i>Evolución</h5>
+        {% if habit_data %}
+        <div class="btn-group btn-group-sm" role="group" aria-label="Tipo de gráfico">
+            <button type="button" class="btn btn-light active" data-chart-mode="cumulative">Acumulado por hábito</button>
+            <button type="button" class="btn btn-light" data-chart-mode="daily">Cumplimiento diario</button>
         </div>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if habit_data %}
+        <div class="chart-container"><canvas id="habitProgressChart"></canvas></div>
+        {% else %}
+        <p class="text-center text-body-secondary mb-0">No hay datos de hábitos para visualizar.</p>
+        {% endif %}
     </div>
 </div>
+{{ chart_payload|json_script:"chart-data" }}
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    {% if habit_data %}
-    try {
-        // Configurar colores según prioridad
-        function getColorForPriority(priority) {
-            const colors = {
-                'alta': 'rgb(220, 53, 69)',
-                'media': 'rgb(255, 193, 7)',
-                'baja': 'rgb(13, 202, 240)'
-            };
-            return colors[priority.toLowerCase()] || 'rgb(108, 117, 125)';
-        }
-
-        // Preparar datasets
-        const datasets = [
-            {% for data in habit_data %}
-            {
-                label: '{{ data.habit.name|escapejs }}',
-                data: {{ data.chart_data|safe }},
-                borderColor: getColorForPriority('{{ data.habit.priority }}'),
-                backgroundColor: 'transparent',
-                tension: 0.4,
-                borderWidth: 2,
-                fill: false
-            }{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ];
-
-        // Formatear fechas para el eje X
-        const labels = {{ chart_labels|safe }}.map(date => {
-            const dateObj = new Date(date + 'T00:00:00');
-            return dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+document.addEventListener('DOMContentLoaded', function () {
+    // Botones de rango rápido
+    document.querySelectorAll('.preset').forEach(function (link) {
+        link.addEventListener('click', function (event) {
+            event.preventDefault();
+            const days = parseInt(link.dataset.days, 10);
+            const end = new Date('{{ end_date|date:"Y-m-d" }}T00:00:00');
+            const today = new Date();
+            const endDate = end > today ? end : today;
+            const startDate = new Date(endDate);
+            startDate.setDate(startDate.getDate() - (days - 1));
+            const fmt = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            window.location.search = '?start_date=' + fmt(startDate) + '&end_date=' + fmt(endDate);
         });
+    });
 
-        // Crear el gráfico
-        const ctx = document.getElementById('habitProgressChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: datasets
+    const canvas = document.getElementById('habitProgressChart');
+    if (!canvas || !window.Chart) return;
+
+    const payload = JSON.parse(document.getElementById('chart-data').textContent);
+    const priorityColors = { alta: '#dc3545', media: '#fd7e14', baja: '#0dcaf0' };
+    const palette = ['#0d6efd', '#198754', '#6f42c1', '#d63384', '#20c997', '#ffc107', '#6610f2', '#fd7e14'];
+    const labels = payload.labels.map(function (d) {
+        return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+    });
+
+    const cumulativeDatasets = payload.datasets.map(function (ds, i) {
+        const color = payload.datasets.length <= 3 ? (priorityColors[ds.priority] || palette[i % palette.length]) : palette[i % palette.length];
+        return { label: ds.label, data: ds.data, borderColor: color, backgroundColor: color, tension: 0.3, borderWidth: 2, pointRadius: 0, fill: false };
+    });
+    const dailyDatasets = [{
+        type: 'bar', label: '% de hábitos completados', data: payload.daily,
+        backgroundColor: 'rgba(25, 135, 84, 0.6)', borderColor: '#198754', borderWidth: 1,
+    }];
+
+    const textColor = getComputedStyle(document.body).getPropertyValue('--bs-body-color');
+    Chart.defaults.color = textColor;
+
+    const chart = new Chart(canvas, {
+        type: 'line',
+        data: { labels: labels, datasets: cumulativeDatasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                y: { beginAtZero: true, max: 100, title: { display: true, text: 'Porcentaje completado (%)' } },
+                x: { title: { display: true, text: 'Fecha' } },
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: 'Porcentaje completado (%)'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Fecha'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
-                            }
-                        }
-                    }
-                }
-            }
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%' } },
+            },
+        },
+    });
+
+    document.querySelectorAll('[data-chart-mode]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            document.querySelectorAll('[data-chart-mode]').forEach(b => b.classList.remove('active'));
+            button.classList.add('active');
+            const daily = button.dataset.chartMode === 'daily';
+            chart.config.type = daily ? 'bar' : 'line';
+            chart.data.datasets = daily ? dailyDatasets : cumulativeDatasets;
+            chart.update();
         });
-    } catch (error) {
-        console.error('Error al cargar el gráfico:', error);
-    }
-    {% endif %}
+    });
 });
 </script>
 {% endblock %}

@@ -1,160 +1,118 @@
 {% extends 'tracker/base.html' %}
-{% load custom_filters %}
+{% load tracker_tags %}
 
-{% block title %}Vista Semanal - HabitTracker{% endblock %}
+{% block title %}Vista semanal - HabitTracker{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <form style="display:none;">
-        {% csrf_token %}
-    </form>
-    
-    <!-- Tabla de Tareas -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-tasks me-2"></i>Agenda Semanal
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th></th>
-                                    {% for day in week_days %}
-                                    <th class="text-center {% if day.date_obj == today %}bg-light{% endif %}">
-                                        {{ day.date_obj|date:"l"|title }}<br>
-                                        <small>{{ day.date_obj|date:"d/m" }}</small>
-                                    </th>
-                                    {% endfor %}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <th>Tareas</th>
-                                    {% for day in week_days %}
-                                    <td>
-                                        {% for task in tasks_by_day|get_item:day.date_obj %}
-                                        <div class="task-item mb-2 p-2 border rounded bg-white">
-                                            <span class="badge bg-{{ task.priority }} me-2">{{ task.get_priority_display }}</span>
-                                            <strong>{{ task.title }}</strong>
-                                            {% if task.description %}
-                                            <p class="small mb-0 text-muted">{{ task.description|truncatechars:30 }}</p>
-                                            {% endif %}
-                                        </div>
-                                        {% endfor %}
-                                    </td>
-                                    {% endfor %}
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tabla de Hábitos -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-info text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-calendar-check me-2"></i>Seguimiento de Hábitos
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Hábito</th>
-                                    {% for day in week_days %}
-                                    <th class="text-center {% if day.date_obj == today %}bg-light{% endif %}">
-                                        {{ day.date_obj|date:"D"|title }}<br>
-                                        <small>{{ day.date_obj|date:"d/m" }}</small>
-                                    </th>
-                                    {% endfor %}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for habit in habits %}
-                                <tr>
-                                    <td>
-                                        <span class="badge rounded-pill bg-{{ habit.priority }}-subtle text-{{ habit.priority }}">
-                                            {{ habit.get_priority_display }}
-                                        </span>
-                                        {{ habit.name }}
-                                    </td>
-                                    {% for day in week_days %}
-                                    <td class="text-center {% if day.date_obj == today %}bg-light{% endif %}">
-                                        <div class="form-check d-flex justify-content-center">
-                                            <input 
-                                                class="form-check-input habit-checkbox" 
-                                                type="checkbox" 
-                                                data-record-id="{{ habit_records|get_item:habit.id|get_item:day.date_str|get_item:'id' }}"
-                                                {% if habit_records|get_item:habit.id|get_item:day.date_str|get_item:'completed' %}checked{% endif %}
-                                            >
-                                        </div>
-                                    </td>
-                                    {% endfor %}
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+{% csrf_token %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <h1 class="mb-0"><i class="fas fa-calendar-week me-2"></i>Semana del {{ start_of_week|date:"j M" }} al {{ end_of_week|date:"j M Y" }}</h1>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        {% include 'tracker/_calendar_nav.html' with current='week' %}
+        <div class="btn-group" role="group" aria-label="Navegación semanal">
+            <a href="?week={{ prev_week }}" class="btn btn-outline-primary" title="Semana anterior"><i class="fas fa-chevron-left"></i></a>
+            <a href="{% url 'weekly_view' %}" class="btn btn-outline-primary {% if is_current_week %}active{% endif %}">Esta semana</a>
+            <a href="?week={{ next_week }}" class="btn btn-outline-primary" title="Semana siguiente"><i class="fas fa-chevron-right"></i></a>
         </div>
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Manejar los checkboxes de hábitos
-    const habitCheckboxes = document.querySelectorAll('.habit-checkbox');
-    
-    habitCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const recordId = this.dataset.recordId;
-            const isChecked = this.checked;
-            
-fetch('/habit-record/' + recordId + '/toggle/', {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value,
-                },
-                body: JSON.stringify({completed: isChecked})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status !== 'success') {
-                    this.checked = !isChecked; // Revertir si hay error
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                this.checked = !isChecked; // Revertir si hay error
-            });
-        });
-    });
-});
-</script>
+<!-- Agenda de tareas -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0"><i class="fas fa-tasks me-2"></i>Agenda semanal</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered mb-0">
+                <thead>
+                    <tr>
+                        {% for day in week_days %}
+                        <th class="text-center {% if day.date_obj == today %}table-primary{% endif %}">
+                            <a href="{% url 'daily_view' %}?date={{ day.date_str }}" class="text-reset text-decoration-none" title="Ver el día">{{ day.date_obj|date:"l"|capfirst }}</a><br>
+                            <small class="fw-normal">{{ day.date_obj|date:"d/m" }}</small>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        {% for day in week_days %}
+                        <td class="agenda-cell {% if day.date_obj == today %}table-primary{% endif %}">
+                            {% for task in tasks_by_day|get_item:day.date_obj %}
+                            <div class="task-item mb-2 p-2 border rounded bg-body {% if task.completed %}task-done{% elif task.is_overdue %}task-overdue{% endif %}">
+                                <span class="badge text-bg-{{ task.get_priority_color }} mb-1">{{ task.get_priority_display }}</span>
+                                {% if task.completed %}<i class="fas fa-check text-success ms-1" title="Completada"></i>{% endif %}
+                                <div class="fw-semibold">{{ task.title }}</div>
+                                {% if task.description %}
+                                <p class="small mb-0 text-body-secondary">{{ task.description|truncatechars:40 }}</p>
+                                {% endif %}
+                            </div>
+                            {% empty %}
+                            <p class="small text-body-secondary text-center mb-1">Sin tareas</p>
+                            {% endfor %}
+                            {% if day.date_obj >= today %}
+                            <a href="{% url 'task_list' %}?due={{ day.date_str }}" class="btn btn-sm btn-link w-100 text-decoration-none" title="Añadir tarea para este día">
+                                <i class="fas fa-plus"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
-<style>
-    .badge.bg-alta { background-color: #dc3545; } /* Rojo */
-    .badge.bg-media { background-color: #ffc107; color: #000; } /* Amarillo */
-    .badge.bg-baja { background-color: #17a2b8; } /* Azul claro */
-    
-    .task-item {
-        transition: all 0.2s ease;
-    }
-    .task-item:hover {
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    }
-</style>
+<!-- Seguimiento de hábitos -->
+<div class="card">
+    <div class="card-header bg-info text-white">
+        <h5 class="card-title mb-0"><i class="fas fa-calendar-check me-2"></i>Seguimiento de hábitos</h5>
+    </div>
+    <div class="card-body">
+        {% if habits %}
+        <div class="table-responsive">
+            <table class="table table-borderless habit-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Hábito</th>
+                        {% for day in week_days %}
+                        <th class="text-center {% if day.date_obj == today %}today-col rounded-top{% endif %}">
+                            {{ day.date_obj|date:"D"|capfirst }}<br>
+                            <small class="fw-normal">{{ day.date_obj|date:"d/m" }}</small>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for habit in habits %}
+                    {% with records=habit_records|get_item:habit.id %}
+                    <tr>
+                        <td>
+                            <span class="badge rounded-pill text-bg-{{ habit.get_priority_color }}">{{ habit.get_priority_display }}</span>
+                            <a href="{% url 'habit_detail' habit.id %}" class="text-decoration-none">{{ habit.name }}</a>
+                        </td>
+                        {% for day in week_days %}
+                        {% with record=records|get_item:day.date_str %}
+                        <td class="text-center {% if day.date_obj == today %}today-col{% endif %}">
+                            {% if day.date_obj > today %}
+                                {% include 'tracker/_habit_checkbox.html' with habit=habit day=day.date_obj completed=record.completed future=True %}
+                            {% else %}
+                                {% include 'tracker/_habit_checkbox.html' with habit=habit day=day.date_obj completed=record.completed future=False %}
+                            {% endif %}
+                        </td>
+                        {% endwith %}
+                        {% endfor %}
+                    </tr>
+                    {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center text-body-secondary mb-0">No tienes hábitos activos. <a href="{% url 'new_habit' %}">Crea uno</a>.</p>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

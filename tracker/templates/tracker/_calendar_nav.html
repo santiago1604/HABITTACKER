@@ -1,0 +1,6 @@
+<div class="btn-group" role="group" aria-label="Cambiar vista del calendario">
+    <a href="{% url 'daily_view' %}?date={{ ref_date|date:'Y-m-d' }}" class="btn btn-outline-secondary {% if current == 'day' %}active{% endif %}">Día</a>
+    <a href="{% url 'weekly_view' %}?week={{ ref_date|date:'Y-m-d' }}" class="btn btn-outline-secondary {% if current == 'week' %}active{% endif %}">Semana</a>
+    <a href="{% url 'monthly_view' %}?month={{ ref_date|date:'Y-m' }}" class="btn btn-outline-secondary {% if current == 'month' %}active{% endif %}">Mes</a>
+    <a href="{% url 'yearly_view' %}?year={{ ref_date|date:'Y' }}" class="btn btn-outline-secondary {% if current == 'year' %}active{% endif %}">Año</a>
+</div>

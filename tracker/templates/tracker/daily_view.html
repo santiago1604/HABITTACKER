@@ -1,0 +1,121 @@
+{% extends 'tracker/base.html' %}
+
+{% block title %}{{ day|date:"d/m/Y" }} - HabitTracker{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h1 class="mb-0"><i class="fas fa-calendar-day me-2"></i>{{ day|date:"l, j \d\e F \d\e Y"|capfirst }}</h1>
+        {% if is_today %}<span class="badge text-bg-primary">Hoy</span>{% elif is_future %}<span class="badge text-bg-secondary">Futuro</span>{% endif %}
+    </div>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        {% include 'tracker/_calendar_nav.html' with current='day' %}
+        <div class="btn-group" role="group" aria-label="Navegación diaria">
+            <a href="?date={{ prev_day }}" class="btn btn-outline-primary" title="Día anterior"><i class="fas fa-chevron-left"></i></a>
+            <a href="{% url 'daily_view' %}" class="btn btn-outline-primary {% if is_today %}active{% endif %}">Hoy</a>
+            <a href="?date={{ next_day }}" class="btn btn-outline-primary" title="Día siguiente"><i class="fas fa-chevron-right"></i></a>
+        </div>
+        <form method="get" class="d-flex">
+            <label for="jump-date" class="visually-hidden">Ir a fecha</label>
+            <input type="date" id="jump-date" name="date" value="{{ day|date:'Y-m-d' }}" class="form-control" onchange="this.form.submit()">
+        </form>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Hábitos del día -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0"><i class="fas fa-calendar-check me-2"></i>Hábitos</h5>
+                {% if habits_total %}<span class="badge text-bg-light"><span id="day-habits-done">{{ habits_done }}</span>/{{ habits_total }}</span>{% endif %}
+            </div>
+            <div class="card-body">
+                {% if habit_items %}
+                <div class="progress mb-3" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ habit_rate }}">
+                    <div class="progress-bar bg-success" id="day-habits-bar" style="width: {{ habit_rate }}%">{{ habit_rate }}%</div>
+                </div>
+                {% if is_future %}
+                <p class="small text-body-secondary"><i class="fas fa-lock me-1"></i> Los días futuros no se pueden marcar todavía.</p>
+                {% endif %}
+                <ul class="list-group list-group-flush">
+                    {% for item in habit_items %}
+                    <li class="list-group-item px-0 d-flex align-items-center">
+                        <div class="form-check mb-0 me-3">
+                            {% include 'tracker/_habit_checkbox.html' with habit=item.habit day=day completed=item.completed future=is_future %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <a href="{% url 'habit_detail' item.habit.id %}" class="fw-semibold text-decoration-none">{{ item.habit.name }}</a>
+                            {% if item.habit.description %}<div class="small text-body-secondary">{{ item.habit.description|truncatechars:80 }}</div>{% endif %}
+                        </div>
+                        <span class="badge rounded-pill text-bg-{{ item.habit.get_priority_color }} me-2">{{ item.habit.get_priority_display }}</span>
+                        <span class="badge rounded-pill text-bg-light border streak-badge" title="Racha actual (mejor: {{ item.best_streak }})">
+                            <i class="fas fa-fire text-danger"></i> <span data-streak-for="{{ item.habit.id }}">{{ item.current_streak }}</span>
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-center text-body-secondary mb-0">No tienes hábitos activos. <a href="{% url 'new_habit' %}">Crea uno</a>.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tareas del día -->
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0"><i class="fas fa-tasks me-2"></i>Tareas para este día</h5>
+                {% if day >= today %}
+                <a href="{% url 'task_list' %}?due={{ day|date:'Y-m-d' }}" class="btn btn-sm btn-light"><i class="fas fa-plus me-1"></i> Añadir</a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% include 'tracker/_day_task_list.html' with tasks=tasks_due empty_text='No hay tareas con fecha límite este día.' %}
+            </div>
+        </div>
+
+        {% if overdue_tasks %}
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Vencidas</h5>
+            </div>
+            <div class="card-body">
+                {% include 'tracker/_day_task_list.html' with tasks=overdue_tasks show_date=True %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if completed_other %}
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0"><i class="fas fa-check-circle me-2"></i>Otras tareas completadas este día</h5>
+            </div>
+            <div class="card-body">
+                {% include 'tracker/_day_task_list.html' with tasks=completed_other show_date=True %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('habit:toggled', function () {
+    const all = document.querySelectorAll('.habit-checkbox');
+    const done = document.querySelectorAll('.habit-checkbox:checked').length;
+    const rate = all.length ? Math.floor(done / all.length * 100) : 0;
+    const counter = document.getElementById('day-habits-done');
+    const bar = document.getElementById('day-habits-bar');
+    if (counter) counter.textContent = done;
+    if (bar) {
+        bar.style.width = rate + '%';
+        bar.textContent = rate + '%';
+        bar.parentElement.setAttribute('aria-valuenow', rate);
+    }
+});
+</script>
+{% endblock %}

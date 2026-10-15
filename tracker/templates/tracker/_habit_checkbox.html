@@ -1,0 +1,7 @@
+<input class="form-check-input habit-checkbox" type="checkbox"
+       data-url="{% url 'toggle_habit' habit.id %}"
+       data-habit-id="{{ habit.id }}"
+       data-date="{{ day|date:'Y-m-d' }}"
+       aria-label="{{ habit.name }} - {{ day|date:'l d/m' }}"
+       {% if completed %}checked{% endif %}
+       {% if future %}disabled title="Aún no puedes marcar este día"{% endif %}>

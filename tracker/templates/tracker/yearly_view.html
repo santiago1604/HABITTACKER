@@ -1,0 +1,146 @@
+{% extends 'tracker/base.html' %}
+
+{% block title %}Año {{ year }} - HabitTracker{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <h1 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Año {{ year }}</h1>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        {% include 'tracker/_calendar_nav.html' with current='year' %}
+        <div class="btn-group" role="group" aria-label="Navegación anual">
+            <a href="?year={{ prev_year }}{% if selected_habit %}&habit={{ selected_habit.id }}{% endif %}" class="btn btn-outline-primary" title="Año anterior"><i class="fas fa-chevron-left"></i></a>
+            <a href="?{% if selected_habit %}habit={{ selected_habit.id }}{% endif %}" class="btn btn-outline-primary {% if is_current_year %}active{% endif %}">Este año</a>
+            <a href="?year={{ next_year }}{% if selected_habit %}&habit={{ selected_habit.id }}{% endif %}" class="btn btn-outline-primary" title="Año siguiente"><i class="fas fa-chevron-right"></i></a>
+        </div>
+        {% if all_habits %}
+        <form method="get">
+            <input type="hidden" name="year" value="{{ year }}">
+            <label for="habit-filter" class="visually-hidden">Filtrar por hábito</label>
+            <select name="habit" id="habit-filter" class="form-select" onchange="this.form.submit()">
+                <option value="">Todos los hábitos</option>
+                {% for habit in all_habits %}
+                <option value="{{ habit.id }}" {% if selected_habit and selected_habit.id == habit.id %}selected{% endif %}>{{ habit.name }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Resumen anual -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card h-100"><div class="card-body">
+            <div class="text-body-secondary small">Cumplimiento {% if selected_habit %}de "{{ selected_habit.name }}"{% else %}de hábitos{% endif %}</div>
+            <div class="stat-value">{{ year_rate }}%</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card h-100"><div class="card-body">
+            <div class="text-body-secondary small">Días activos</div>
+            <div class="stat-value">{{ active_days }}</div>
+            <small class="text-body-secondary">{{ total_done }} marcas en total</small>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card h-100"><div class="card-body">
+            <div class="text-body-secondary small">Mejor mes</div>
+            {% if best_month %}
+            <div class="stat-value fs-3">{{ best_month.date|date:"F"|capfirst }}</div>
+            <small class="text-body-secondary">{{ best_month.rate }}% de cumplimiento</small>
+            {% else %}
+            <div class="stat-value">—</div>
+            {% endif %}
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card h-100"><div class="card-body">
+            <div class="text-body-secondary small">Tareas completadas</div>
+            <div class="stat-value">{{ tasks_completed_year }}</div>
+        </div></div>
+    </div>
+</div>
+
+<!-- Mapa de calor por mes -->
+<div class="row g-3 mb-4">
+    {% for month in months %}
+    <div class="col-sm-6 col-lg-4 col-xl-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-baseline mb-2">
+                    <a href="{% url 'monthly_view' %}?month={{ month.date|date:'Y-m' }}" class="fw-semibold text-decoration-none">{{ month.date|date:"F"|capfirst }}</a>
+                    <small class="text-body-secondary">
+                        {% if month.rate is not None %}{{ month.rate }}%{% endif %}
+                        {% if month.tasks_completed %}· <i class="fas fa-check"></i> {{ month.tasks_completed }}{% endif %}
+                    </small>
+                </div>
+                <table class="mini-cal">
+                    <thead>
+                        <tr>{% for initial in weekday_initials %}<th>{{ initial }}</th>{% endfor %}</tr>
+                    </thead>
+                    <tbody>
+                        {% for week in month.weeks %}
+                        <tr>
+                            {% for cell in week %}
+                            {% if cell %}
+                            <td class="{% if cell.level is not None %}heat-{{ cell.level }}{% endif %} {% if cell.future %}future{% endif %} {% if cell.is_today %}today{% endif %}"
+                                title="{{ cell.date|date:'j \d\e F' }}{% if cell.eligible %}: {{ cell.done }}/{{ cell.eligible }} hábitos{% endif %}">
+                                <a href="{% url 'daily_view' %}?date={{ cell.date|date:'Y-m-d' }}">{{ cell.date.day }}</a>
+                            </td>
+                            {% else %}
+                            <td></td>
+                            {% endif %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="small text-body-secondary heat-legend mb-4">
+    Menos <span class="heat-0 ms-1"></span> <span class="heat-1"></span> <span class="heat-2"></span> <span class="heat-3"></span> <span class="heat-4"></span> Más
+</div>
+
+<!-- Resumen por hábito -->
+<div class="card">
+    <div class="card-header bg-info text-white">
+        <h5 class="card-title mb-0"><i class="fas fa-list-check me-2"></i>Hábitos en {{ year }}</h5>
+    </div>
+    <div class="card-body">
+        {% if habit_summary %}
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Hábito</th>
+                        <th class="text-center">Días completados</th>
+                        <th class="text-center">Mejor racha</th>
+                        <th style="min-width: 160px;">Cumplimiento</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in habit_summary %}
+                    <tr>
+                        <td><a href="{% url 'habit_detail' item.habit.id %}" class="text-decoration-none">{{ item.habit.name }}</a></td>
+                        <td class="text-center">{{ item.done }} <span class="text-body-secondary">/ {{ item.eligible }}</span></td>
+                        <td class="text-center"><i class="fas fa-fire text-danger"></i> {{ item.best_streak }}</td>
+                        <td>
+                            <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ item.rate }}">
+                                <div class="progress-bar bg-success" style="width: {{ item.rate }}%">{{ item.rate }}%</div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center text-body-secondary mb-0">No tienes hábitos activos.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
